@@ -19,8 +19,16 @@ public class RoutingContextUtil {
     respond(routingContext, HttpCode.OK.code, body);
   }
 
+  public static void respondSuccess(RoutingContext routingContext) {
+    respond(routingContext, HttpCode.OK.code, null);
+  }
+
   public static void respondCreated(RoutingContext routingContext, JsonObject body) {
-    respond(routingContext, HttpCode.OK.code, body);
+    respond(routingContext, HttpCode.CREATED.code, body);
+  }
+
+  public static void respondCreated(RoutingContext routingContext) {
+    respond(routingContext, HttpCode.CREATED.code, null);
   }
 
   public static void respondBadRequest(RoutingContext routingContext) {
@@ -54,8 +62,12 @@ public class RoutingContextUtil {
   }
 
   public static void respond(RoutingContext context, int statusCode, JsonObject responseBody) {
-    Buffer bufferedResponseBody = ModelConverter.toBuffer(responseBody);
-    buildResponse(context, statusCode).end(bufferedResponseBody);
+    if (responseBody == null) {
+      buildResponse(context, statusCode).end();
+    } else {
+      Buffer bufferedResponseBody = ModelConverter.toBuffer(responseBody);
+      buildResponse(context, statusCode).end(bufferedResponseBody);
+    }
   }
 
   public static HttpServerResponse buildResponse(RoutingContext context, int statusCode) {

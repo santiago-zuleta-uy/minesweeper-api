@@ -8,9 +8,9 @@ import java.io.Serializable;
 @Data
 @Accessors(chain = true)
 public class Cell implements Serializable {
-  Integer row;
-  Integer column;
-  Boolean isMined;
-  Boolean isFlagged;
-  Boolean isRevealed;
+  int row;
+  int column;
+  boolean isMined;
+  boolean isFlagged;
+  boolean isRevealed;
 }

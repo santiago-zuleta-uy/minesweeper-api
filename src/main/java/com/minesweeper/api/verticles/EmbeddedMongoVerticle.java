@@ -1,15 +1,14 @@
 package com.minesweeper.api.verticles;
 
 import com.minesweeper.api.constants.EventBusAddress;
+import com.minesweeper.api.constants.MongoDbCollection;
 import com.minesweeper.api.models.Game;
+import com.minesweeper.api.models.User;
 import com.minesweeper.api.respositories.GamesRepository;
 import com.minesweeper.api.respositories.GamesRepositoryImpl;
+import com.minesweeper.api.respositories.UsersRepository;
+import com.minesweeper.api.respositories.UsersRepositoryImpl;
 import de.flapdoodle.embed.mongo.MongodExecutable;
-import de.flapdoodle.embed.mongo.MongodStarter;
-import de.flapdoodle.embed.mongo.config.MongodConfig;
-import de.flapdoodle.embed.mongo.config.Net;
-import de.flapdoodle.embed.mongo.distribution.Version;
-import de.flapdoodle.embed.process.runtime.Network;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.logging.Logger;
@@ -26,6 +25,7 @@ public class EmbeddedMongoVerticle extends AbstractVerticle {
   private MongodExecutable mongodExecutable;
   private MongoClient mongoClient;
   private GamesRepository gamesRepository;
+  private UsersRepository usersRepository;
 
   @Override
   public void start() throws Exception {
@@ -35,32 +35,46 @@ public class EmbeddedMongoVerticle extends AbstractVerticle {
 
   private void initializeEmbeddedMongoDb() throws IOException {
     logger.info("initializing embedded mongo db");
-    MongodStarter mongodStarter = MongodStarter.getDefaultInstance();
-    int port = Network.getFreeServerPort();
-    MongodConfig mongodConfig = MongodConfig.builder()
-      .version(Version.Main.PRODUCTION)
-      .net(new Net(port, Network.localhostIsIPv6()))
-      .build();
-    mongodExecutable = mongodStarter.prepare(mongodConfig);
-    mongodExecutable.start();
+//    MongodStarter mongodStarter = MongodStarter.getDefaultInstance();
+    int port = 27017;//Network.getFreeServerPort();
+//    MongodConfig mongodConfig = MongodConfig.builder()
+//      .version(Version.Main.PRODUCTION)
+//      .net(new Net(port, Network.localhostIsIPv6()))
+//      .build();
+//    mongodExecutable = mongodStarter.prepare(mongodConfig);
+//    mongodExecutable.start();
     JsonObject config = new JsonObject()
       .put("host", "localhost")
       .put("port", port)
       .put("db_name", "minesweeper");
     mongoClient = MongoClient.createShared(vertx, config);
-    mongoClient.createCollection("games");
-    logger.info("embedded mongo db started and listening at port " + port);
+    mongoClient.createCollection(MongoDbCollection.GAMES.name);
+    mongoClient.createCollection(MongoDbCollection.USERS.name);
+    mongoClient.createIndex(
+      MongoDbCollection.USERS.name,
+      new JsonObject().put("email", "mail@test.com")
+    );
+    logger.info("embedded mongo db initialized and listening at port " + port);
   }
 
   private void initializeRepositories() {
     this.gamesRepository = new GamesRepositoryImpl(mongoClient);
-    vertx.eventBus().consumer(
-      EventBusAddress.REPOSITORY_CREATE_GAME.address,
+    this.usersRepository = new UsersRepositoryImpl(mongoClient);
+    this.vertx.eventBus().consumer(
+      EventBusAddress.REPOSITORY_SAVE_GAME.address,
       (Message<Game> message) -> this.gamesRepository.createGame(message)
     );
-    vertx.eventBus().consumer(
+    this.vertx.eventBus().consumer(
       EventBusAddress.REPOSITORY_FIND_GAME_BY_ID.address,
       (Message<String> message) -> this.gamesRepository.findGameById(message)
+    );
+    this.vertx.eventBus().consumer(
+      EventBusAddress.REPOSITORY_CREATE_USER.address,
+      (Message<User> message) -> this.usersRepository.createUser(message)
+    );
+    this.vertx.eventBus().consumer(
+      EventBusAddress.REPOSITORY_FIND_USER_BY_EMAIL.address,
+      (Message<String> message) -> this.usersRepository.findUserByEmail(message)
     );
   }
 

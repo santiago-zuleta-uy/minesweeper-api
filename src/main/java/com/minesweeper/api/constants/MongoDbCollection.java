@@ -2,7 +2,8 @@ package com.minesweeper.api.constants;
 
 public enum MongoDbCollection {
 
-  GAMES("games");
+  GAMES("games"),
+  USERS("users");
 
   public String name;
 

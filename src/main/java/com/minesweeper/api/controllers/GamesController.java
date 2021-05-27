@@ -18,4 +18,8 @@ public class GamesController {
   public void getGame(RoutingContext routingContext) {
     this.gameService.getGame(routingContext);
   }
+
+  public void revealGameCell(RoutingContext routingContext) {
+    this.gameService.revealGameCell(routingContext);
+  }
 }
