@@ -12,6 +12,6 @@ public abstract class GamesRepository {
     this.mongoClient = mongoClient;
   }
 
-  public abstract void createGame(Message<Game> message);
+  public abstract void updateGame(Message<Game> message);
   public abstract void findGameById(Message<String> message);
 }

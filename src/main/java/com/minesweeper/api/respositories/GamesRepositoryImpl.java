@@ -7,6 +7,7 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.mongo.UpdateOptions;
 
 public class GamesRepositoryImpl extends GamesRepository {
 
@@ -17,35 +18,42 @@ public class GamesRepositoryImpl extends GamesRepository {
   }
 
   @Override
-  public void createGame(Message<Game> message) {
-    JsonObject document = JsonObject.mapFrom(message.body());
-    logger.info("saving game: " + document);
-    this.mongoClient.save(
+  public void updateGame(Message<Game> message) {
+    Game game = message.body();
+    JsonObject gameJson = JsonObject.mapFrom(game);
+    gameJson.remove("_id");
+    JsonObject document = new JsonObject().put("$set", gameJson);
+    JsonObject query = new JsonObject().put("_id", game.getId());
+    logger.info("updating game: " + game.getId());
+    this.mongoClient.updateCollectionWithOptions(
       MongoDbCollection.GAMES.name,
+      query,
       document,
-      response -> {
-        if (response.failed()) {
-          message.fail(500, response.cause().getMessage());
-        } else {
-          logger.info("game saved: " + document);
-          message.reply(response.result());
-        }
+      new UpdateOptions().setUpsert(true)
+    ).onComplete(response -> {
+      if (response.failed()) {
+        logger.error("failed to upsert game " + game.getId(), response.cause());
+        message.fail(500, response.cause().getMessage());
+      } else {
+        logger.info("successfully updated game " + game.getId());
+        message.reply(game.getId());
       }
-    );
+    });
   }
 
   @Override
   public void findGameById(Message<String> message) {
+    String gameId = message.body();
     this.mongoClient.findOne(
       MongoDbCollection.GAMES.name,
-      new JsonObject().put("_id", message.body()),
+      new JsonObject().put("_id", gameId),
       new JsonObject(),
       response -> {
         if (response.failed()) {
+          logger.error("failed to find game " + gameId, response.cause());
           message.fail(500, response.cause().getMessage());
         } else {
           JsonObject result = response.result();
-          logger.info("find game response from mongodb: " + result);
           message.reply(result.mapTo(Game.class));
         }
       }

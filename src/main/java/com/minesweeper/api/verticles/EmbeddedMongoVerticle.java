@@ -61,8 +61,8 @@ public class EmbeddedMongoVerticle extends AbstractVerticle {
     this.gamesRepository = new GamesRepositoryImpl(mongoClient);
     this.usersRepository = new UsersRepositoryImpl(mongoClient);
     this.vertx.eventBus().consumer(
-      EventBusAddress.REPOSITORY_SAVE_GAME.address,
-      (Message<Game> message) -> this.gamesRepository.createGame(message)
+      EventBusAddress.REPOSITORY_UPSERT_GAME.address,
+      (Message<Game> message) -> this.gamesRepository.updateGame(message)
     );
     this.vertx.eventBus().consumer(
       EventBusAddress.REPOSITORY_FIND_GAME_BY_ID.address,

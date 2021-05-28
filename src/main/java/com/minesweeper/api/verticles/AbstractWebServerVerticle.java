@@ -50,6 +50,7 @@ public abstract class AbstractWebServerVerticle extends AbstractVerticle {
     String catchAllRoute = "/*";
     String jsonMimeType = "application/json";
     this.router.post(catchAllRoute).handler(BodyHandler.create());
+    this.router.patch(catchAllRoute).handler(BodyHandler.create());
     this.router.route().handler(FaviconHandler.create(vertx));
     this.router.route(catchAllRoute)
       .consumes(jsonMimeType)

@@ -22,4 +22,12 @@ public class GamesController {
   public void revealGameCell(RoutingContext routingContext) {
     this.gameService.revealGameCell(routingContext);
   }
+
+  public void flagGameCell(RoutingContext routingContext) {
+    this.gameService.flagGameCell(routingContext);
+  }
+
+  public void pauseGame(RoutingContext routingContext) {
+    this.gameService.pauseGame(routingContext);
+  }
 }

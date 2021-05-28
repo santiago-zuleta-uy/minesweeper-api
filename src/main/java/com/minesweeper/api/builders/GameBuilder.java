@@ -1,6 +1,15 @@
-package com.minesweeper.api.models;
+package com.minesweeper.api.builders;
 
-import java.util.*;
+import com.minesweeper.api.models.Cell;
+import com.minesweeper.api.models.Game;
+import com.minesweeper.api.models.GameStatus;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class GameBuilder {
@@ -39,7 +48,6 @@ public class GameBuilder {
           new Cell()
             .setRow(row)
             .setColumn(column)
-            .setFlagged(false)
             .setRevealed(false)
             .setMined(false)
         );
@@ -73,7 +81,10 @@ public class GameBuilder {
     List<Cell> cells = this.getCellsShuffledAndMined();
     Map<String, Cell> cellsMap = this.mapCellsByRowAndColumn(cells);
     return this.game
+      .setSecondsPlayed(0)
+      .setStatus(GameStatus.IN_PROGRESS)
       .setCells(cellsMap)
+      .setId(UUID.randomUUID().toString())
       .setStartDate(new Date());
   }
 

@@ -20,5 +20,7 @@ public class WebServerVerticle extends AbstractWebServerVerticle {
     router.post("/v1/users").handler(usersController::createUser);
     router.get("/v1/games/:gameId").handler(gamesController::getGame);
     router.patch("/v1/games/:gameId/reveal").handler(gamesController::revealGameCell);
+    router.patch("/v1/games/:gameId/cells/flag").handler(gamesController::flagGameCell);
+    router.patch("/v1/games/:gameId/pause").handler(gamesController::pauseGame);
   }
 }

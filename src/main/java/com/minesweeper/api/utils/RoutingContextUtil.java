@@ -1,7 +1,6 @@
 package com.minesweeper.api.utils;
 
 import com.minesweeper.api.constants.HttpCode;
-import com.minesweeper.api.models.ModelConverter;
 import com.minesweeper.api.verticles.AbstractWebServerVerticle;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
