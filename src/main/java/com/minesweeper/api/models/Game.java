@@ -45,15 +45,17 @@ public class Game implements Serializable {
   }
 
   @Tolerate
-  public void updateSecondsPlayed() {
-    if (this.resumeDateMillis == null) {
-      long millisElapsed = new Date().getTime() - this.startDateMillis.getTime();
-      long totalSecondsFromStartDate = Duration.ofMillis(millisElapsed).getSeconds();
-      this.setSecondsPlayed(totalSecondsFromStartDate);
-    } else {
-      long millisElapsed = new Date().getTime() - this.resumeDateMillis.getTime();
-      long totalSecondsFromResumeDate = Duration.ofMillis(millisElapsed).getSeconds();
-      this.setSecondsPlayed(this.secondsPlayed - totalSecondsFromResumeDate);
+  public void updateSecondsPlayedIfNotPaused() {
+    if (GameStatus.PAUSED != this.getStatus()) {
+      if (this.resumeDateMillis == null) {
+        long millisElapsed = new Date().getTime() - this.startDateMillis.getTime();
+        long totalSecondsFromStartDate = Duration.ofMillis(millisElapsed).getSeconds();
+        this.setSecondsPlayed(totalSecondsFromStartDate);
+      } else {
+        long millisElapsed = new Date().getTime() - this.resumeDateMillis.getTime();
+        long totalSecondsFromResumeDate = Duration.ofMillis(millisElapsed).getSeconds();
+        this.setSecondsPlayed(this.secondsPlayed + totalSecondsFromResumeDate);
+      }
     }
   }
 
@@ -62,7 +64,7 @@ public class Game implements Serializable {
     if (GameStatus.PAUSED == this.getStatus()) {
       this.setResumeDateMillis(new Date());
       this.setStatus(GameStatus.IN_PROGRESS);
-      this.updateSecondsPlayed();
+      this.updateSecondsPlayedIfNotPaused();
     }
   }
 }

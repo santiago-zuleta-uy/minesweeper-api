@@ -17,7 +17,6 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -66,7 +65,7 @@ public class GameServiceImpl implements GameService {
         RoutingContextUtil.respondInternalServerError(routingContext);
       } else {
         Game game = response.result().body();
-        game.updateSecondsPlayed();
+        game.updateSecondsPlayedIfNotPaused();
         RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(game));
       }
     });
@@ -93,7 +92,7 @@ public class GameServiceImpl implements GameService {
           Set<Cell> revealedCells = GameUtil.revealAndGetAdjacentCells(game, cell);
           game.putCells(revealedCells);
           game.resumeIfPaused();
-          this.logGamePrettily(game);
+          //this.logGame(game);
           this.getSaveGameFuture(game).onSuccess(saveGameResponse -> {
             logger.info("cell " + cell.key() + " successfully revealed for game " + gameId);
             RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(game));
@@ -147,8 +146,8 @@ public class GameServiceImpl implements GameService {
       if (game == null) {
         RoutingContextUtil.respondNotFound(routingContext);
       } else {
+        game.updateSecondsPlayedIfNotPaused();
         game.setStatus(GameStatus.PAUSED);
-        game.updateSecondsPlayed();
         this.getSaveGameFuture(game).onSuccess(saveGameResponse -> {
           logger.info("game " + gameId + " successfully paused");
           RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(game));
@@ -168,7 +167,11 @@ public class GameServiceImpl implements GameService {
     return this.vertx.eventBus().request(REPOSITORY_FIND_GAME_BY_ID.address, gameId);
   }
 
-  private void logGamePrettily(Game game) {
+  /**
+   * Just a logging method to help myself troubleshooting issues.
+   * @param game
+   */
+  private void logGame(Game game) {
     List<String> keys = game.getCells().keySet().stream().sorted().collect(Collectors.toList());
     long lastRow = 0;
     System.out.print("\n");

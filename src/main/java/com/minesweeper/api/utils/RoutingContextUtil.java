@@ -84,12 +84,16 @@ public class RoutingContextUtil {
   }
 
   public void respondError(RoutingContext context, int statusCode, String message) {
-    JsonObject response = new JsonObject()
-      .put("status", statusCode)
-      .put("message", message);
-    String logMessage = message + " " + getRequestAndResponseContext(context, statusCode, response.toString());
+    String logMessage = message + " " + getRequestAndResponseContext(context, statusCode, message);
     logger.error(logMessage, context.failure());
-    respond(context, statusCode, response);
+    if (message != null) {
+      JsonObject response = new JsonObject()
+        .put("status", statusCode)
+        .put("message", message);
+      respond(context, statusCode, response);
+    } else {
+      respond(context, statusCode, null);
+    }
   }
 
   public void respond(RoutingContext context, int statusCode, JsonObject responseBody) {
@@ -110,15 +114,15 @@ public class RoutingContextUtil {
   public String getRequestAndResponseContext(
     RoutingContext routingContext,
     int responseStatus,
-    String responseBody
+    String message
   ) {
     HttpServerRequest request = routingContext.request();
     return String.format(
-      "[requestPath: %s, requestQuery: %s, responseStatus: %d, responseBody: %s]",
+      "[requestPath: %s, requestQuery: %s, responseStatus: %d, message: %s]",
       request.path(),
       request.query(),
       responseStatus,
-      responseBody
+      message
     );
   }
 }

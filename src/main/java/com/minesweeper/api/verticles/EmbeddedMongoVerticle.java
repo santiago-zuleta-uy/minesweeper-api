@@ -9,6 +9,11 @@ import com.minesweeper.api.respositories.GamesRepositoryImpl;
 import com.minesweeper.api.respositories.UsersRepository;
 import com.minesweeper.api.respositories.UsersRepositoryImpl;
 import de.flapdoodle.embed.mongo.MongodExecutable;
+import de.flapdoodle.embed.mongo.MongodStarter;
+import de.flapdoodle.embed.mongo.config.MongodConfig;
+import de.flapdoodle.embed.mongo.config.Net;
+import de.flapdoodle.embed.mongo.distribution.Version;
+import de.flapdoodle.embed.process.runtime.Network;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.logging.Logger;
@@ -37,14 +42,14 @@ public class EmbeddedMongoVerticle extends AbstractVerticle {
 
   private void initializeEmbeddedMongoDb() throws IOException {
     logger.info("initializing embedded mongo db");
-//    MongodStarter mongodStarter = MongodStarter.getDefaultInstance();
-    int port = 27017;//Network.getFreeServerPort();
-//    MongodConfig mongodConfig = MongodConfig.builder()
-//      .version(Version.Main.PRODUCTION)
-//      .net(new Net(port, Network.localhostIsIPv6()))
-//      .build();
-//    mongodExecutable = mongodStarter.prepare(mongodConfig);
-//    mongodExecutable.start();
+    MongodStarter mongodStarter = MongodStarter.getDefaultInstance();
+    int port = Network.getFreeServerPort();
+    MongodConfig mongodConfig = MongodConfig.builder()
+      .version(Version.Main.PRODUCTION)
+      .net(new Net(port, Network.localhostIsIPv6()))
+      .build();
+    mongodExecutable = mongodStarter.prepare(mongodConfig);
+    mongodExecutable.start();
     JsonObject config = new JsonObject()
       .put("host", "localhost")
       .put("port", port)
