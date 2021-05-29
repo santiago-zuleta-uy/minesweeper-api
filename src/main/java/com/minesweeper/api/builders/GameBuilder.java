@@ -85,7 +85,7 @@ public class GameBuilder {
       .setStatus(GameStatus.IN_PROGRESS)
       .setCells(cellsMap)
       .setId(UUID.randomUUID().toString())
-      .setStartDate(new Date());
+      .setStartDateMillis(new Date());
   }
 
   public static GameBuilder get() {

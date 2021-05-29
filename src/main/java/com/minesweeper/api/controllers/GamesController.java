@@ -1,14 +1,16 @@
 package com.minesweeper.api.controllers;
 
 import com.minesweeper.api.services.GameService;
+import com.minesweeper.api.services.GameServiceImpl;
+import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 
 public class GamesController {
 
   private GameService gameService;
 
-  public GamesController(GameService gameService) {
-    this.gameService = gameService;
+  public GamesController(Vertx vertx) {
+    this.gameService = new GameServiceImpl(vertx);
   }
 
   public void createGame(RoutingContext routingContext) {

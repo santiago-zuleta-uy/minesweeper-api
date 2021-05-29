@@ -14,4 +14,5 @@ public abstract class GamesRepository {
 
   public abstract void updateGame(Message<Game> message);
   public abstract void findGameById(Message<String> message);
+  public abstract void findGameByUserEmail(Message<String> message);
 }

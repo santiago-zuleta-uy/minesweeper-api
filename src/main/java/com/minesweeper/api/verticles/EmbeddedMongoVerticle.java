@@ -18,6 +18,8 @@ import io.vertx.ext.mongo.MongoClient;
 
 import java.io.IOException;
 
+import static com.minesweeper.api.constants.EventBusAddress.REPOSITORY_FIND_GAMES_BY_USER_EMAIL;
+
 public class EmbeddedMongoVerticle extends AbstractVerticle {
 
   private static final Logger logger = LoggerFactory.getLogger(EmbeddedMongoVerticle.class);
@@ -51,8 +53,13 @@ public class EmbeddedMongoVerticle extends AbstractVerticle {
     mongoClient.createCollection(MongoDbCollection.GAMES.name);
     mongoClient.createCollection(MongoDbCollection.USERS.name);
     mongoClient.createIndex(
-      MongoDbCollection.USERS.name,
-      new JsonObject().put("email", "mail@test.com")
+      MongoDbCollection.GAMES.name,
+      new JsonObject().put("userEmail", 1),
+      response -> {
+        if (response.failed()) {
+          logger.error("failed to create userEmail index", response.cause());
+        }
+      }
     );
     logger.info("embedded mongo db initialized and listening at port " + port);
   }
@@ -75,6 +82,10 @@ public class EmbeddedMongoVerticle extends AbstractVerticle {
     this.vertx.eventBus().consumer(
       EventBusAddress.REPOSITORY_FIND_USER_BY_EMAIL.address,
       (Message<String> message) -> this.usersRepository.findUserByEmail(message)
+    );
+    this.vertx.eventBus().consumer(
+      REPOSITORY_FIND_GAMES_BY_USER_EMAIL.address,
+      (Message<String> message) -> this.gamesRepository.findGameByUserEmail(message)
     );
   }
 

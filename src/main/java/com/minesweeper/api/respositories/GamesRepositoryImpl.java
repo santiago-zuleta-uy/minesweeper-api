@@ -9,6 +9,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.mongo.UpdateOptions;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class GamesRepositoryImpl extends GamesRepository {
 
   private static final Logger logger = LoggerFactory.getLogger(GamesRepositoryImpl.class);
@@ -55,6 +58,28 @@ public class GamesRepositoryImpl extends GamesRepository {
         } else {
           JsonObject result = response.result();
           message.reply(result.mapTo(Game.class));
+        }
+      }
+    );
+  }
+
+  @Override
+  public void findGameByUserEmail(Message<String> message) {
+    String userEmail = message.body();
+    this.mongoClient.find(
+      MongoDbCollection.GAMES.name,
+      new JsonObject().put("userEmail", userEmail),
+      response -> {
+        if (response.failed()) {
+          logger.error("failed to find games for user email " + userEmail, response.cause());
+          message.fail(500, response.cause().getMessage());
+        } else {
+          List<JsonObject> results = response.result();
+          message.reply(
+            results.stream()
+              .map(result -> result.mapTo(Game.class))
+              .collect(Collectors.toList())
+          );
         }
       }
     );

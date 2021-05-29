@@ -24,8 +24,8 @@ public class Game implements Serializable {
   int columns;
   int mines;
   Map<String, Cell> cells;
-  Date startDate;
-  Date pauseDate;
+  Date startDateMillis;
+  Date resumeDateMillis;
   long secondsPlayed;
   GameStatus status;
 
@@ -46,23 +46,23 @@ public class Game implements Serializable {
 
   @Tolerate
   public void updateSecondsPlayed() {
-    long totalSecondsFromStartDate = Duration.ofMillis(new Date().getTime() - startDate.getTime()).getSeconds();
-    if (this.pauseDate == null) {
+    if (this.resumeDateMillis == null) {
+      long millisElapsed = new Date().getTime() - this.startDateMillis.getTime();
+      long totalSecondsFromStartDate = Duration.ofMillis(millisElapsed).getSeconds();
       this.setSecondsPlayed(totalSecondsFromStartDate);
     } else {
-      long pausedSeconds = Duration.ofMillis(new Date().getTime() - pauseDate.getTime()).getSeconds();
-      this.setSecondsPlayed(totalSecondsFromStartDate - pausedSeconds);
+      long millisElapsed = new Date().getTime() - this.resumeDateMillis.getTime();
+      long totalSecondsFromResumeDate = Duration.ofMillis(millisElapsed).getSeconds();
+      this.setSecondsPlayed(this.secondsPlayed - totalSecondsFromResumeDate);
     }
   }
 
   @Tolerate
   public void resumeIfPaused() {
     if (GameStatus.PAUSED == this.getStatus()) {
+      this.setResumeDateMillis(new Date());
       this.setStatus(GameStatus.IN_PROGRESS);
-      long pausedSeconds = Duration.ofMillis(new Date().getTime() - pauseDate.getTime()).getSeconds();
-      long totalSecondsFromStartDate = Duration.ofMillis(new Date().getTime() - startDate.getTime()).getSeconds();
-      this.setSecondsPlayed(totalSecondsFromStartDate - pausedSeconds);
-      this.setPauseDate(null);
+      this.updateSecondsPlayed();
     }
   }
 }

@@ -24,11 +24,10 @@ public class UsersRepositoryImpl extends UsersRepository {
       MongoDbCollection.USERS.name,
       document,
       response -> {
-        logger.info("save user response from mongodb: " + response.result());
         if (response.failed()) {
           message.fail(500, response.cause().getMessage());
         }
-        message.reply(null);
+        message.reply(response.result());
       }
     );
   }
@@ -45,7 +44,6 @@ public class UsersRepositoryImpl extends UsersRepository {
           message.fail(500, response.cause().getMessage());
         } else  {
           JsonObject result = response.result();
-          logger.info("find user response from mongodb: " + result);
           message.reply(result.mapTo(User.class));
         }
       }

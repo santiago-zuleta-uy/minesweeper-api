@@ -3,7 +3,7 @@ package com.minesweeper.api.services;
 import com.minesweeper.api.builders.GameBuilder;
 import com.minesweeper.api.constants.EventBusAddress;
 import com.minesweeper.api.models.Cell;
-import com.minesweeper.api.models.Flag;
+import com.minesweeper.api.models.CellFlag;
 import com.minesweeper.api.models.Game;
 import com.minesweeper.api.models.GameStatus;
 import com.minesweeper.api.models.User;
@@ -33,11 +33,8 @@ public class GameServiceImpl implements GameService {
 
   private Vertx vertx;
 
-  private UserService userService;
-
   public GameServiceImpl(Vertx vertx) {
     this.vertx = vertx;
-    this.userService = new UserServiceImpl(vertx);
   }
 
   @Override
@@ -45,7 +42,7 @@ public class GameServiceImpl implements GameService {
     Integer rows = routingContext.getBodyAsJson().getInteger("rows", 0);
     Integer columns = routingContext.getBodyAsJson().getInteger("columns", 0);
     Integer mines = routingContext.getBodyAsJson().getInteger("mines", 0);
-    String userEmail = routingContext.pathParam("userEmail");
+    String userEmail = routingContext.get("userEmail");
     this.vertx.eventBus().<User>request(REPOSITORY_FIND_USER_BY_EMAIL.address, userEmail).onSuccess(userMessage -> {
       User user = userMessage.body();
       Game game = GameBuilder.get()
@@ -118,13 +115,17 @@ public class GameServiceImpl implements GameService {
     String row = routingContext.getBodyAsJson().getString("row");
     String column = routingContext.getBodyAsJson().getString("column");
     String flagType = routingContext.getBodyAsJson().getString("flagType");
+    CellFlag flag = CellFlag.get(flagType);
+    if (flag == null) {
+      RoutingContextUtil.respondBadRequest(routingContext, "Invalid flag type");
+    }
     this.getFindGameByIdFuture(gameId).onSuccess(message -> {
       Game game = message.body();
       if (game == null) {
         RoutingContextUtil.respondNotFound(routingContext);
       } else {
         Cell cell = game.getCells().get(row + ":" + column);
-        Cell flaggedCell = cell.setFlag(Flag.valueOf(flagType));
+        Cell flaggedCell = cell.setFlag(flag);
         game.putCell(flaggedCell);
         game.resumeIfPaused();
         this.getSaveGameFuture(game).onSuccess(saveGameResponse -> {
@@ -147,7 +148,7 @@ public class GameServiceImpl implements GameService {
         RoutingContextUtil.respondNotFound(routingContext);
       } else {
         game.setStatus(GameStatus.PAUSED);
-        game.setPauseDate(new Date());
+        game.updateSecondsPlayed();
         this.getSaveGameFuture(game).onSuccess(saveGameResponse -> {
           logger.info("game " + gameId + " successfully paused");
           RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(game));

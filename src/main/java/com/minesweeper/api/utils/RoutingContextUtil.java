@@ -9,58 +9,90 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import lombok.experimental.UtilityClass;
 
+@UtilityClass
 public class RoutingContextUtil {
 
-  private static final Logger logger = LoggerFactory.getLogger(AbstractWebServerVerticle.class);
+  private final Logger logger = LoggerFactory.getLogger(AbstractWebServerVerticle.class);
 
-  public static void respondSuccess(RoutingContext routingContext, JsonObject body) {
+  public void respondSuccess(RoutingContext routingContext, JsonObject body) {
     respond(routingContext, HttpCode.OK.code, body);
   }
 
-  public static void respondSuccess(RoutingContext routingContext) {
+  public void respondSuccess(RoutingContext routingContext) {
     respond(routingContext, HttpCode.OK.code, null);
   }
 
-  public static void respondCreated(RoutingContext routingContext, JsonObject body) {
+  public void respondCreated(RoutingContext routingContext, JsonObject body) {
     respond(routingContext, HttpCode.CREATED.code, body);
   }
 
-  public static void respondCreated(RoutingContext routingContext) {
+  public void respondCreated(RoutingContext routingContext) {
     respond(routingContext, HttpCode.CREATED.code, null);
   }
 
-  public static void respondBadRequest(RoutingContext routingContext) {
-    respondError(routingContext, HttpCode.BAD_REQUEST.code, "Bad request");
+  public void respondBadRequest(RoutingContext routingContext) {
+    respondError(routingContext, HttpCode.BAD_REQUEST.code, null);
   }
 
-  public static void respondForbidden(RoutingContext routingContext) {
-    respondError(routingContext, HttpCode.FORBIDDEN.code, "Forbidden");
+  public void respondBadRequest(RoutingContext routingContext, String message) {
+    respondError(routingContext, HttpCode.BAD_REQUEST.code, message);
   }
 
-  public static void respondNotFound(RoutingContext routingContext) {
-    respondError(routingContext, HttpCode.NOT_FOUND.code, "Not found");
+  public void respondBadRequestIfNullPathParam(RoutingContext routingContext, String paramKey) {
+    String paramValue = routingContext.pathParam(paramKey);
+    if (paramValue == null) {
+      respondError(routingContext, HttpCode.BAD_REQUEST.code, "Missing path parameter " + paramKey);
+    } else {
+      routingContext.next();
+    }
   }
 
-  public static void respondBadGateway(RoutingContext routingContext) {
-    respondError(routingContext, HttpCode.BAD_GATEWAY.code, "Bad gateway");
+  public void respondBadRequestIfNullQueryParam(RoutingContext routingContext, String paramKey) {
+    String paramValue = routingContext.queryParams().get(paramKey);
+    if (paramValue == null) {
+      respondError(routingContext, HttpCode.BAD_REQUEST.code, "Missing query parameter " + paramKey);
+    } else {
+      routingContext.next();
+    }
   }
 
-  public static void respondInternalServerError(RoutingContext routingContext) {
-    respondError(routingContext, HttpCode.INTERNAL_SERVER_ERROR.code, "Internal server error");
+  public void respondBadRequestIfNullBodyParam(RoutingContext routingContext, String paramKey) {
+    String paramValue = routingContext.getBodyAsJson().getString(paramKey);
+    if (paramValue == null) {
+      respondError(routingContext, HttpCode.BAD_REQUEST.code, "Missing body parameter " + paramKey);
+    } else {
+      routingContext.next();
+    }
   }
 
-  public static void respondError(RoutingContext context, int statusCode, String message) {
-    String responseMsg = context.failure().getMessage();
+  public void respondForbidden(RoutingContext routingContext) {
+    respond(routingContext, HttpCode.FORBIDDEN.code, null);
+  }
+
+  public void respondNotFound(RoutingContext routingContext) {
+    respondError(routingContext, HttpCode.NOT_FOUND.code, null);
+  }
+
+  public void respondBadGateway(RoutingContext routingContext) {
+    respondError(routingContext, HttpCode.BAD_GATEWAY.code, null);
+  }
+
+  public void respondInternalServerError(RoutingContext routingContext) {
+    respondError(routingContext, HttpCode.INTERNAL_SERVER_ERROR.code, null);
+  }
+
+  public void respondError(RoutingContext context, int statusCode, String message) {
     JsonObject response = new JsonObject()
       .put("status", statusCode)
-      .put("message", responseMsg);
+      .put("message", message);
     String logMessage = message + " " + getRequestAndResponseContext(context, statusCode, response.toString());
     logger.error(logMessage, context.failure());
     respond(context, statusCode, response);
   }
 
-  public static void respond(RoutingContext context, int statusCode, JsonObject responseBody) {
+  public void respond(RoutingContext context, int statusCode, JsonObject responseBody) {
     if (responseBody == null) {
       buildResponse(context, statusCode).end();
     } else {
@@ -69,13 +101,13 @@ public class RoutingContextUtil {
     }
   }
 
-  public static HttpServerResponse buildResponse(RoutingContext context, int statusCode) {
+  public HttpServerResponse buildResponse(RoutingContext context, int statusCode) {
     return context.response()
       .putHeader("Content-Type", "application-json")
       .setStatusCode(statusCode);
   }
 
-  public static String getRequestAndResponseContext(
+  public String getRequestAndResponseContext(
     RoutingContext routingContext,
     int responseStatus,
     String responseBody

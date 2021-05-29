@@ -14,7 +14,7 @@ public class Cell implements Serializable {
   long row;
   long column;
   boolean isMined;
-  Flag flag;
+  CellFlag flag;
   boolean isRevealed;
   long surroundingMinesCount;
 
@@ -28,6 +28,7 @@ public class Cell implements Serializable {
     return this.setRevealed(true);
   }
 
+  @Tolerate
   public String log() {
     return " | " + getRow() + ":" + getColumn() + " (" + (isMined() ? 1 : 0) + ":" + (isRevealed() ? 1 : 0) + ":" + getSurroundingMinesCount() + ") | ";
   }
