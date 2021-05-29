@@ -57,6 +57,7 @@ public class GamesRepositoryImpl extends GamesRepository {
           message.fail(500, response.cause().getMessage());
         } else {
           JsonObject result = response.result();
+          logger.info("game finding result: " + result);
           message.reply(result.mapTo(Game.class));
         }
       }

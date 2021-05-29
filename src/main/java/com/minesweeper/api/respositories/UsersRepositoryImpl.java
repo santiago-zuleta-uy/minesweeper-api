@@ -18,33 +18,45 @@ public class UsersRepositoryImpl extends UsersRepository {
 
   @Override
   public void createUser(Message<User> message) {
-    JsonObject document = JsonObject.mapFrom(message.body());
+    User user = message.body();
+    JsonObject document = JsonObject.mapFrom(user);
     logger.info("saving user: " + document);
     this.mongoClient.save(
       MongoDbCollection.USERS.name,
       document,
       response -> {
         if (response.failed()) {
+          logger.error("failed to create user: " + user, response.cause());
           message.fail(500, response.cause().getMessage());
+        } else {
+          logger.info("successfully created user: " + user);
+          message.reply(response.result());
         }
-        message.reply(response.result());
       }
     );
   }
 
   @Override
   public void findUserByEmail(Message<String> message) {
-    logger.info("finding user: " + message.body());
+    String userEmail = message.body();
+    logger.info("finding user: " + userEmail);
     this.mongoClient.findOne(
       MongoDbCollection.USERS.name,
-      new JsonObject().put("_id", message.body()),
+      new JsonObject().put("_id", userEmail),
       new JsonObject(),
       response -> {
         if (response.failed()) {
+          logger.error("failed to find user " + userEmail + " by email", response.cause());
           message.fail(500, response.cause().getMessage());
-        } else  {
+        } else {
           JsonObject result = response.result();
-          message.reply(result.mapTo(User.class));
+          if (result == null) {
+            logger.info("user not found: " + userEmail);
+            message.reply(null);
+          } else {
+            logger.info("user found: " + userEmail);
+            message.reply(result.mapTo(User.class));
+          }
         }
       }
     );

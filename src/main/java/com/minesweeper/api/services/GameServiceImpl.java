@@ -65,8 +65,12 @@ public class GameServiceImpl implements GameService {
         RoutingContextUtil.respondInternalServerError(routingContext);
       } else {
         Game game = response.result().body();
-        game.updateSecondsPlayedIfNotPaused();
-        RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(game));
+        if (game == null) {
+          RoutingContextUtil.respondNotFound(routingContext);
+        } else {
+          game.updateSecondsPlayedIfNotPaused();
+          RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(game));
+        }
       }
     });
   }
