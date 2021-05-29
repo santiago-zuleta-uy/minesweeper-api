@@ -1,5 +1,6 @@
 package com.minesweeper.api.verticles;
 
+import com.minesweeper.api.controllers.DocumentationController;
 import com.minesweeper.api.controllers.GamesController;
 import com.minesweeper.api.controllers.HealthCheckController;
 import com.minesweeper.api.controllers.UsersController;
@@ -13,8 +14,11 @@ public class WebServerVerticle extends AbstractWebServerVerticle {
     HealthCheckController healthCheckController = new HealthCheckController();
     GamesController gamesController = new GamesController(this.vertx);
     UsersController usersController = new UsersController(this.vertx);
+    DocumentationController documentationController = new DocumentationController();
     router.get("/")
       .handler(healthCheckController::health);
+    router.get("/v1/documentation")
+      .handler(documentationController::getDocumentation);
     router.post("/v1/users")
       .handler(rc -> RoutingContextUtil.respondBadRequestIfNullBodyParam(rc, "email"))
       .handler(usersController::authenticateUser);

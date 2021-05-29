@@ -1,0 +1,330 @@
+swagger: '2.0'
+info:
+  description: 'Minesweeper API'
+  version: '1.0.0'
+  title: 'minesweeper-api'
+
+host: 155.138.208.11
+schemes:
+  - 'http'
+basePath: /v1
+
+paths:
+
+  /users:
+    post:
+      tags:
+        - users
+      description: 'Authenticates provided user email. New user with provided email will be created if it does not exist.'
+      produces:
+        - 'application/json'
+      parameters:
+        - in: body
+          name: body
+          description: Email of the user to be authenticated, no password needed, just validates that user exists in our database.
+          required: true
+          schema:
+            $ref: '#/definitions/User'
+      responses:
+        200:
+          description: Successful operation.
+          schema:
+            $ref: '#/definitions/UserPostResponse'
+        500:
+          description: Unexpected server error.
+
+  /games:
+    post:
+      tags:
+        - games
+      description: Creates a new game using provided input parameters.
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          description: User authorization token.
+          required: true
+          type: string
+        - name: body
+          in: body
+          description: Specifies the amount of cells, rows and mines for the new game.
+          required: true
+          schema:
+            $ref: '#/definitions/GamePostRequest'
+      responses:
+        200:
+          description: Successful operation.
+          schema:
+            $ref: '#/definitions/Game'
+        404:
+          description: Game not found.
+        403:
+          description: User not authorized.
+
+  /games/{gameId}:
+    get:
+      tags:
+        - games
+      description: Retrieves a game by id.
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          description: User authorization token.
+          required: true
+          type: string
+        - name: gameId
+          in: path
+          description: Game identifier.
+          type: string
+          required: true
+      responses:
+        200:
+          description: Successful operation.
+          schema:
+            $ref: '#/definitions/Game'
+        404:
+          description: Game not found.
+        403:
+          description: User not authorized.
+
+  /games/{gameId}/cells/reveal:
+    patch:
+      tags:
+        - games
+      description: Reveals a game's cell and its surrounding cells recursively if not mined.
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          description: User authorization token.
+          required: true
+          type: string
+        - name: gameId
+          in: path
+          description: Game identifier.
+          required: true
+          type: string
+        - name: body
+          in: body
+          description: Position of the cell to be revealed.
+          required: true
+          schema:
+            $ref: '#/definitions/GameCellRevealRequest'
+      responses:
+        200:
+          description: Successful operation.
+          schema:
+            $ref: '#/definitions/Game'
+        404:
+          description: Game not found.
+        403:
+          description: User not authorized.
+
+  /games/{gameId}/cells/flag:
+    patch:
+      tags:
+        - games
+      description: Flags a game's cell with a question mark or red flag.
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          description: User authorization token.
+          required: true
+          type: string
+        - name: gameId
+          in: path
+          description: Game identifier.
+          required: true
+          type: string
+        - name: body
+          in: body
+          description: Position of the cell to be flagged and kind of flag.
+          required: true
+          schema:
+            $ref: '#/definitions/GameCellFlagRequest'
+      responses:
+        200:
+          description: Successful operation.
+          schema:
+            $ref: '#/definitions/Game'
+        404:
+          description: Game not found.
+        403:
+          description: User not authorized.
+
+  /games/{gameId}/pause:
+    patch:
+      tags:
+        - games
+      description: Pauses a game which is in progress.
+      produces:
+        - application/json
+      parameters:
+        - name: Authorization
+          in: header
+          description: User authorization token.
+          required: true
+          type: string
+        - name: gameId
+          in: path
+          description: Game identifier.
+          required: true
+          type: string
+      responses:
+        200:
+          description: Successful operation.
+          schema:
+            $ref: '#/definitions/Game'
+        404:
+          description: Game not found.
+        403:
+          description: User not authorized.
+
+definitions:
+  GameCellFlagRequest:
+    type: object
+    properties:
+      row:
+        type: integer
+        description: Row to be revealed.
+      column:
+        type: integer
+        description: Column to be revealed.
+      flagType:
+        type: object
+        description: Type of flag to be used.
+        $ref: '#/definitions/Cell'
+  GameCellRevealRequest:
+    type: object
+    properties:
+      row:
+        type: integer
+        description: Row to be revealed.
+      column:
+        type: integer
+        description: Column to be revealed.
+  CellFlag:
+    type: string
+    description: Cell flag to indicate if there is a question mark or red flag.
+    enum:
+      - QUESTION_MARK
+      - RED_FLAG
+  User:
+    type: object
+    required:
+      - email
+    properties:
+      email:
+        type: string
+  UserPostResponse:
+    type: object
+    description: User token generated with authentication endpoint.
+    properties:
+      token:
+        description: JWT token generated for user which expires in 24hs.
+        type: string
+  GamePostRequest:
+    type: object
+    description: Game parameters
+    properties:
+      rows:
+        description: Amount of rows to be added.
+        type: integer
+      columns:
+        description: Amount of columns to be added.
+        type: integer
+      mines:
+        description: Amount of mines to be added.
+        type: integer
+  Game:
+    type: object
+    description: A minesweeper game representation.
+    properties:
+      id:
+        type: string
+        description: Game identifier generated with UUID.
+      userEmail:
+        type: string
+        description: Email of the game's owner.
+      rows:
+        type: integer
+        description: Amount of rows in game.
+      columns:
+        type: integer
+        description: Amount of columns in game.
+      mines:
+        type: integer
+        description: Amount of mines in game.
+      cells:
+        type: object
+        $ref: '#/definitions/CellsMap'
+        description: A key/value map structure of all cells in game.
+      startDateMillis:
+        type: integer
+        description: Start date of the game in milliseconds.
+      resumeDateMillis:
+        type: integer
+        description: Date in which the paused game was resumed in milliseconds.
+      secondsPlayed:
+        type: integer
+        description: Sum of time played in seconds. Excludes pause periods.
+      status:
+        type: object
+        $ref: '#/definitions/GameStatus'
+        description: Current status of the game.
+  CellsMap:
+    type: object
+    description: Cell unique identifier formatted according to pattern {row}:{column}. Example 10:5.
+    additionalProperties:
+      type: object
+      $ref: '#/definitions/Cell'
+    example:
+      '1:1':
+        row: 1
+        column: 1
+        isMined: true
+        isRevealed: false
+        surroundingMinesCount: 0
+        flag: QUESTION_MARK
+      '1:2':
+        row: 1
+        column: 2
+        isMined: false
+        isRevealed: true
+        surroundingMinesCount: 1
+        flag: null
+  Cell:
+    type: object
+    properties:
+      row:
+        type: integer
+        description: Indicates row position of the cell.
+      column:
+        type: integer
+        description: Indicates column position of the cell.
+      isMined:
+        type: boolean
+        description: Indicates if cell is mined.
+      isRevealed:
+        type: boolean
+        description: Indicates if cell is revealed.
+      surroundingMinesCount:
+        type: integer
+        description: Amount of adjacent mined cells.
+      flag:
+        type: object
+        $ref: '#/definitions/CellFlag'
+        description: Indicates if cell is flagged.
+  GameStatus:
+    type: string
+    enum:
+      - IN_PROGRESS
+      - PAUSED
+      - GAME_OVER
+      - GAME_WON
