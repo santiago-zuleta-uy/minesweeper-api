@@ -8,8 +8,12 @@ public enum CellFlag {
 
   public static CellFlag get(String flagName) {
     return Arrays.stream(values())
-      .filter(f -> f.name().equals(flagName))
+      .filter(cellFlag -> cellFlag.name().equals(flagName))
       .findFirst()
       .orElse(null);
+  }
+
+  public boolean isRedFlag() {
+    return this == RED_FLAG;
   }
 }

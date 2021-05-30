@@ -45,8 +45,8 @@ public class Game implements Serializable {
   }
 
   @Tolerate
-  public void updateSecondsPlayedIfNotPaused() {
-    if (GameStatus.PAUSED != this.getStatus()) {
+  public void updateSecondsPlayedIfInProgress() {
+    if (this.getStatus().isGameInProgress()) {
       if (this.resumeDateMillis == null) {
         long millisElapsed = new Date().getTime() - this.startDateMillis.getTime();
         long totalSecondsFromStartDate = Duration.ofMillis(millisElapsed).getSeconds();
@@ -61,10 +61,10 @@ public class Game implements Serializable {
 
   @Tolerate
   public void resumeIfPaused() {
-    if (GameStatus.PAUSED == this.getStatus()) {
+    if (this.getStatus().isGamePaused()) {
       this.setResumeDateMillis(new Date());
-      this.setStatus(GameStatus.IN_PROGRESS);
-      this.updateSecondsPlayedIfNotPaused();
+      this.setStatus(GameStatus.GAME_IN_PROGRESS);
+      this.updateSecondsPlayedIfInProgress();
     }
   }
 }

@@ -21,7 +21,7 @@ public class GamesRepositoryImpl extends GamesRepository {
   }
 
   @Override
-  public void updateGame(Message<Game> message) {
+  public void upsertGame(Message<Game> message) {
     Game game = message.body();
     JsonObject gameJson = JsonObject.mapFrom(game);
     gameJson.remove("_id");

@@ -28,9 +28,9 @@ import static com.minesweeper.api.constants.EventBusAddress.REPOSITORY_UPSERT_GA
 
 public class GameServiceImpl implements GameService {
 
-  private Logger logger = LoggerFactory.getLogger(GameServiceImpl.class);
+  private final Logger logger = LoggerFactory.getLogger(GameServiceImpl.class);
 
-  private Vertx vertx;
+  private final Vertx vertx;
 
   public GameServiceImpl(Vertx vertx) {
     this.vertx = vertx;
@@ -50,17 +50,14 @@ public class GameServiceImpl implements GameService {
         .withMines(mines)
         .withUserEmail(user.getEmail())
         .build();
-      this.vertx.eventBus().<String>request(REPOSITORY_UPSERT_GAME.address, game).onSuccess(gameMessage -> {
-        String id = gameMessage.body();
-        RoutingContextUtil.respondSuccess(routingContext, new JsonObject().put("id", id));
-      });
+      this.upsertGameInRepository(routingContext, game);
     });
   }
 
   @Override
   public void getGame(RoutingContext routingContext) {
     String id = routingContext.pathParam("gameId");
-    vertx.eventBus().<Game>request(EventBusAddress.REPOSITORY_FIND_GAME_BY_ID.address, id, response -> {
+    this.vertx.eventBus().<Game>request(EventBusAddress.REPOSITORY_FIND_GAME_BY_ID.address, id, response -> {
       if (response.failed()) {
         RoutingContextUtil.respondInternalServerError(routingContext);
       } else {
@@ -68,7 +65,7 @@ public class GameServiceImpl implements GameService {
         if (game == null) {
           RoutingContextUtil.respondNotFound(routingContext);
         } else {
-          game.updateSecondsPlayedIfNotPaused();
+          game.updateSecondsPlayedIfInProgress();
           RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(game));
         }
       }
@@ -84,30 +81,53 @@ public class GameServiceImpl implements GameService {
       Game game = message.body();
       if (game == null) {
         RoutingContextUtil.respondNotFound(routingContext);
+      } else if (game.getStatus().isGameOver() || game.getStatus().isGameWon()) {
+        logger.info("unable to reveal cell for finished game " + gameId);
+        RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(game));
       } else {
-        Map<String, Cell> cellsMap = game.getCells();
-        Cell cell = cellsMap.get(row + ":" + column);
-        if (cell == null) {
-          RoutingContextUtil.respondNotFound(routingContext);
-        } else if (cell.isMined()) {
-          game.setStatus(GameStatus.GAME_OVER);
-          RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(game));
-        } else {
-          Set<Cell> revealedCells = GameUtil.revealAndGetAdjacentCells(game, cell);
-          game.putCells(revealedCells);
-          game.resumeIfPaused();
-          //this.logGame(game);
-          this.getSaveGameFuture(game).onSuccess(saveGameResponse -> {
-            logger.info("cell " + cell.key() + " successfully revealed for game " + gameId);
-            RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(game));
-          }).onFailure(throwable -> {
-            logger.error("failed to reveal cell for game " + gameId, throwable);
-            RoutingContextUtil.respondInternalServerError(routingContext);
-          });
-        }
+        this.revealCellAndUpdateGame(routingContext, game, row, column);
       }
     }).onFailure(throwable -> {
       logger.error("failed to reveal cell for game " + gameId, throwable);
+      RoutingContextUtil.respondInternalServerError(routingContext);
+    });
+  }
+
+  private void revealCellAndUpdateGame(RoutingContext routingContext, Game game, String row, String column) {
+    Map<String, Cell> cellsMap = game.getCells();
+    Cell cell = cellsMap.get(row + ":" + column);
+    if (cell == null) {
+      RoutingContextUtil.respondNotFound(routingContext);
+    } else if (cell.isMined()) {
+      game.updateSecondsPlayedIfInProgress();
+      game.setStatus(GameStatus.GAME_OVER);
+      this.upsertGameInRepository(routingContext, game);
+      RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(game));
+    } else {
+      Game updatedGame = this.revealCellAndUpdateGame(game, cell);
+      this.upsertGameInRepository(routingContext, updatedGame);
+    }
+  }
+
+  private Game revealCellAndUpdateGame(Game game, Cell cell) {
+    Set<Cell> revealedCells = GameUtil.revealCellsRecursively(game, cell);
+    game.putCells(revealedCells);
+    game.resumeIfPaused();
+    if (GameUtil.isGameWon(game)) {
+      game.setStatus(GameStatus.GAME_WON);
+    }
+    game.updateSecondsPlayedIfInProgress();
+    return game;
+  }
+
+  private void upsertGameInRepository(RoutingContext routingContext, Game game) {
+    this.getUpsertGameFuture(game).onSuccess(response -> {
+      String gameId = response.body();
+      Game upsertedGame = game.setId(gameId);
+      logger.info("successfully upserted game " + upsertedGame.getId());
+      RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(upsertedGame));
+    }).onFailure(throwable -> {
+      logger.error("failed to upsert game " + game.getId(), throwable);
       RoutingContextUtil.respondInternalServerError(routingContext);
     });
   }
@@ -131,7 +151,7 @@ public class GameServiceImpl implements GameService {
         Cell flaggedCell = cell.setFlag(flag);
         game.putCell(flaggedCell);
         game.resumeIfPaused();
-        this.getSaveGameFuture(game).onSuccess(saveGameResponse -> {
+        this.getUpsertGameFuture(game).onSuccess(saveGameResponse -> {
           logger.info("cell " + cell.key() + " successfully flagged for game " + gameId);
           RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(game));
         }).onFailure(throwable -> {
@@ -149,10 +169,14 @@ public class GameServiceImpl implements GameService {
       Game game = message.body();
       if (game == null) {
         RoutingContextUtil.respondNotFound(routingContext);
+      } else if (game.getStatus().isNotGameInProgress()) {
+        String responseMessage = "game " + gameId + " is invalid status for being paused";
+        logger.info(responseMessage);
+        RoutingContextUtil.respondBadRequest(routingContext, responseMessage);
       } else {
-        game.updateSecondsPlayedIfNotPaused();
-        game.setStatus(GameStatus.PAUSED);
-        this.getSaveGameFuture(game).onSuccess(saveGameResponse -> {
+        game.updateSecondsPlayedIfInProgress();
+        game.setStatus(GameStatus.GAME_PAUSED);
+        this.getUpsertGameFuture(game).onSuccess(saveGameResponse -> {
           logger.info("game " + gameId + " successfully paused");
           RoutingContextUtil.respondSuccess(routingContext, JsonObject.mapFrom(game));
         }).onFailure(throwable -> {
@@ -163,7 +187,7 @@ public class GameServiceImpl implements GameService {
     });
   }
 
-  private Future<Message<String>> getSaveGameFuture(Game game) {
+  private Future<Message<String>> getUpsertGameFuture(Game game) {
     return this.vertx.eventBus().request(REPOSITORY_UPSERT_GAME.address, game);
   }
 
@@ -172,7 +196,8 @@ public class GameServiceImpl implements GameService {
   }
 
   /**
-   * Just a logging method to help myself troubleshooting issues.
+   * Just a logging method to help myself troubleshooting issues locally.
+   *
    * @param game
    */
   private void logGame(Game game) {

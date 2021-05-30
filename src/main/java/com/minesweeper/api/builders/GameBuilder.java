@@ -82,7 +82,7 @@ public class GameBuilder {
     Map<String, Cell> cellsMap = this.mapCellsByRowAndColumn(cells);
     return this.game
       .setSecondsPlayed(0)
-      .setStatus(GameStatus.IN_PROGRESS)
+      .setStatus(GameStatus.GAME_IN_PROGRESS)
       .setCells(cellsMap)
       .setId(UUID.randomUUID().toString())
       .setStartDateMillis(new Date());

@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @UtilityClass
 public class GameUtil {
 
-  public Set<Cell> revealAndGetAdjacentCells(Game game, Cell cell) {
+  public Set<Cell> revealCellsRecursively(Game game, Cell cell) {
     cell.reveal();
     Set<Cell> adjacentCells = GameUtil.getAdjacentCells(game, cell);
     long minedCellsFound = adjacentCells.stream().filter(Cell::isMined).count();
@@ -21,9 +21,25 @@ public class GameUtil {
       return adjacentCells;
     } else {
       return adjacentCells.stream()
-        .map(revealedCell -> revealAndGetAdjacentCells(game, revealedCell))
+        .map(revealedCell -> revealCellsRecursively(game, revealedCell))
         .flatMap(Collection::stream)
         .collect(Collectors.toSet());
+    }
+  }
+
+  public boolean isGameWon(Game game) {
+    if (game.getStatus().isGameOver()) {
+      return false;
+    } else {
+      long totalCells = game.getCells().size();
+      long totalMinedCells = game.getMines();
+      long totalRevealedOrRedFlaggedCells = game.getCells()
+        .values()
+        .stream()
+        .filter(cell -> cell.isRevealed() || (cell.getFlag() != null && cell.getFlag().isRedFlag()))
+        .count();
+      boolean isGameWon = totalCells == (totalMinedCells + totalRevealedOrRedFlaggedCells);
+      return isGameWon;
     }
   }
 
