@@ -42,6 +42,7 @@ dependencies {
   implementation("io.vertx:vertx-auth-jwt:4.0.3")
   compileOnly("org.projectlombok:lombok:1.18.20")
   annotationProcessor("org.projectlombok:lombok:1.18.20")
+  testImplementation("org.mockito:mockito-junit-jupiter:3.10.0")
   testImplementation("io.vertx:vertx-junit5")
   testImplementation("org.junit.jupiter:junit-jupiter:$junitJupiterVersion")
 }

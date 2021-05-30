@@ -97,11 +97,12 @@ public class RoutingContextUtil {
   }
 
   public void respond(RoutingContext context, int statusCode, JsonObject responseBody) {
+    HttpServerResponse response = buildResponse(context, statusCode);
     if (responseBody == null) {
-      buildResponse(context, statusCode).end();
+      response.end();
     } else {
       Buffer bufferedResponseBody = ModelConverter.toBuffer(responseBody);
-      buildResponse(context, statusCode).end(bufferedResponseBody);
+      response.end(bufferedResponseBody);
     }
   }
 

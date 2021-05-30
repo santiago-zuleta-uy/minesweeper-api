@@ -44,7 +44,7 @@ public class GameServiceImpl implements GameService {
     String userEmail = routingContext.get("userEmail");
     this.vertx.eventBus().<User>request(REPOSITORY_FIND_USER_BY_EMAIL.address, userEmail).onSuccess(userMessage -> {
       User user = userMessage.body();
-      Game game = GameBuilder.get()
+      Game game = GameBuilder.of()
         .withColumns(columns)
         .withRows(rows)
         .withMines(mines)

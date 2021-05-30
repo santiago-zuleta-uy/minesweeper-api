@@ -20,9 +20,9 @@ public class Game implements Serializable {
   @JsonProperty("_id")
   String id;
   String userEmail;
-  int rows;
-  int columns;
-  int mines;
+  long rows;
+  long columns;
+  long mines;
   Map<String, Cell> cells;
   Date startDateMillis;
   Date resumeDateMillis;

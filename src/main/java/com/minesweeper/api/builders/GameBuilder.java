@@ -20,17 +20,17 @@ public class GameBuilder {
     this.game = new Game();
   }
 
-  public GameBuilder withRows(Integer rows) {
+  public GameBuilder withRows(long rows) {
     this.game.setRows(rows);
     return this;
   }
 
-  public GameBuilder withColumns(Integer columns) {
+  public GameBuilder withColumns(long columns) {
     this.game.setColumns(columns);
     return this;
   }
 
-  public GameBuilder withMines(Integer mines) {
+  public GameBuilder withMines(long mines) {
     this.game.setMines(mines);
     return this;
   }
@@ -88,7 +88,7 @@ public class GameBuilder {
       .setStartDateMillis(new Date());
   }
 
-  public static GameBuilder get() {
+  public static GameBuilder of() {
     return new GameBuilder();
   }
 }

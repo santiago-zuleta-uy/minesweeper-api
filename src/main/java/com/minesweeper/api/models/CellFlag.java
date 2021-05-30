@@ -16,4 +16,8 @@ public enum CellFlag {
   public boolean isRedFlag() {
     return this == RED_FLAG;
   }
+
+  public boolean isQuestionMark() {
+    return this == QUESTION_MARK;
+  }
 }

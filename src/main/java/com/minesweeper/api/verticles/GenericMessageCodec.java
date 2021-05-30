@@ -3,9 +3,9 @@ package com.minesweeper.api.verticles;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
 
-class GenericMessageCodec<T> implements MessageCodec<T, T> {
+public class GenericMessageCodec<T> implements MessageCodec<T, T> {
 
-  private Class<T> clazz;
+  private final Class<T> clazz;
 
   public GenericMessageCodec(Class<T> clazz) {
     this.clazz = clazz;
