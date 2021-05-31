@@ -15,6 +15,7 @@ I found this approach convenient for being able to make access to cell more perf
   The authorization token is intended to be provided by header ("Authorization") on each request which interacts with a game.
   Application will check that user exists in database and owns the game referenced by id, if this check fails application will respond a 403 Forbidden.
   Token can be renewed by calling the same endpoint that was used to identify the user, if user already exists it will just generate a new token.
+  Documentation link: http://155.138.208.11:8080/v1/documentation#api-Users-usersPost.
 * Time tracking is calculated in Game's secondsPlayed attribute. It is not a real time tracking, it just gets updated by calculating time elapsed from start date of the game excluding game paused periods.
 
 ## Building
