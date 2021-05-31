@@ -2,6 +2,8 @@
 
 ## [API specification link](http://155.138.208.11:8080/v1/documentation)
 
+* Base URL for all endpoints: http://155.138.208.11:8080/v1
+
 ## Overview
 
 * Java 11/[Vert.X](https://vertx.io/) based service with a classic layered architecture which distributes responsibilities across Controllers, Services and Repositories.
