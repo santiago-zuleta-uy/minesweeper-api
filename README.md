@@ -1,8 +1,8 @@
-#Minesweeper API
+# Minesweeper API
 
-##[API specification link](http://155.138.208.11:8080/v1/documentation)
+## [API specification link](http://155.138.208.11:8080/v1/documentation)
 
-##Overview
+## Overview
 
 * Java 11/[Vert.X](https://vertx.io/) based service with a classic layered architecture which distributes responsibilities across Controllers, Services and Repositories.
 Decided to use Vert.X to take advantage of its asynchronous capabilities and resource efficiency.
@@ -14,7 +14,7 @@ I found this approach convenient for being able to make access to cell more perf
   Application will check that user exists in database and owns the game referenced by id, if this check fails application will respond a 403 Forbidden.
   Token can be renewed by calling the same endpoint that was used to identify the user, if user already exists it will just generate a new token.
 
-##Building
+## Building
 
 To launch tests:
 ```
